@@ -98,3 +98,76 @@ jquery可以使用链式调用，节省了不必要的js代码，提高代码执
     }
 
 这样我们就可以使用链式调用了，因为每次方法执行完会返回实例对象本身（this），从而实例对象又可以访问自己的属性了<br/>
+
+###插件接口
+<!--  -->
+
+##选择器
+jquery框架的基础就是查询，查询dom元素<br/>
+###jquery选择器接口
+jquery是总入口，选择其一共支持9种方式<br/>
+    $(document)
+    $('<div>')
+    $('div')
+    $('#test')
+    $(function(){})
+    $('input:radio',document.forms[0]);
+    $('input',$('div'))
+    $()
+    $('<div>',{
+        'class':'test',
+        text:'click me',
+        click:function(){$(this).toggleClass('test')}
+        }).appendTo('body');
+    $($('.test'));
+
+###jquery查询的对象是dom元素，查询到目标元素后如何存储？
+* 查询得到结果储存到jquery对象内部，由于查询的dom可能是单个元素，也有可能是一个合集
+* jquery内部应该要定义一个合集数组用于存储选择后的元素
+* 根据API，jquery构建的不仅仅是dom元素，还有html字符串，Object等等
+
+内部会按照一些特定类型的值来处理$()中传入的参数，例如处理“”，null，undefined，false等直接返回this<br/>
+处理字符串（之后根据选择器是class还是id以及其他分别处理）<br/>
+处理dom元素<br/>
+处理function<br/>
+
+####匹配id选择器：$('#id')
+1.首先进入字符串处理<br/>
+    if(typeof selector==='string'){
+        //...
+    }
+2.如果发现是以'<'开始'>'结尾的dom元素，例如 $('<p id="test">My <em>new</em> text</p>')这种情况，进入正则检查<br/>
+    rquickExpr = /^(?:\s*(<[\w\W]+>)[^>]*|#([\w-]*))$/;         //用于判断是否为html标签的正则表达式<br/>
+    match=requickExpr.exec(selector);
+3.开始匹配html标签
+    if(match&&(match[1]||!context)){
+        if(match[1]){
+            //...
+        }
+    }
+4.处理ID
+    elem=document.getElementById(match[2]);
+    if(elem && elem.parentNode){
+        this.length=1;
+        this[0]=elem;
+    }
+    this.context=document;
+    this.selector=selectorl
+    return this;
+其中this就是jquery工厂化后返回的实例对象<br/>
+
+####匹配className选择器:$('.className')
+如果第一个参数是一个类名，jquery对象中拥有class名为clasName的标签元素，可以直接使用find方法<br/>
+    return jQuery(document).find(className);    //传入上下文
+####匹配$('.className,context')
+第一个参数是类名，第二个参数是一个上下文对象（比如className，dom节点等）<br/>
+    return jQuery(context).find(className)
+等等....<br/>
+
+###jquery构造器
+本质上来说，构建的jquery对象，其实不仅仅只是dom，还有很多附加的元素，用数组的方式存储<br/>
+总的来说分为两大类：<br/>
+* 单个dom元素，例如$(id)，则直接把dom元素作为数组传递给this对象
+* 多个dom元素，可以通过css选择器匹配dom元素，构建数据结构
+
+css选择器是通过jquery.find(selector)函数完成的，通过它可以分析选择器字符串，并在dom文档树种查找符合语法的元素集合<br/>
